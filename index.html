@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧社区 · 原型演示 v1.0</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #f2f5fa; color: #1f2430; min-height: 100vh; display: flex; flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    height: 52px; flex-shrink: 0; display: flex; align-items: center; padding: 0 22px;
+    background: linear-gradient(90deg, #4361ee, #3a0ca3); color: #fff;
+  }
+  .topbar .logo { font-size: 18px; margin-right: 10px; }
+  .topbar .title { font-size: 15px; font-weight: 700; }
+  .topbar .ver { margin-left: 10px; font-size: 11px; opacity: .75; }
+  .topbar .links { margin-left: auto; display: flex; gap: 16px; font-size: 12px; }
+  .topbar .links a { color: rgba(255,255,255,.88); text-decoration: none; }
+  .topbar .links a:hover { color: #fff; text-decoration: underline; }
+
+  .layout { flex: 1; display: flex; min-height: 0; }
+
+  /* ---------- 左侧目录 ---------- */
+  .side-left {
+    width: 220px; flex-shrink: 0; background: #fff; border-right: 1px solid #e8ecf3;
+    padding: 14px 12px; overflow-y: auto;
+  }
+  .group-name { font-size: 11px; color: #a0a6b5; margin: 14px 6px 6px; }
+  .group-name:first-child { margin-top: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+    font-size: 13px; color: #4a5162; cursor: pointer; transition: all .12s;
+  }
+  .nav-item:hover { background: #f0f4ff; color: #4361ee; }
+  .nav-item.active { background: #eef2ff; color: #3a0ca3; font-weight: 600; }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: #c9d2e8; flex-shrink: 0; }
+  .nav-item.active .dot { background: #4361ee; }
+
+  /* ---------- 中间舞台 ---------- */
+  .stage {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 24px 12px; min-width: 0;
+  }
+  .caption { margin-top: 16px; font-size: 12.5px; color: #7c8497; text-align: center; max-width: 420px; }
+  .caption b { color: #3a0ca3; }
+
+  /* ---------- 右侧说明 ---------- */
+  .side-right {
+    width: 250px; flex-shrink: 0; background: #fff; border-left: 1px solid #e8ecf3;
+    padding: 18px 16px; overflow-y: auto;
+  }
+  .note-title { font-size: 14px; font-weight: 700; color: #3a0ca3; margin-bottom: 10px; }
+  .note-point { font-size: 12.5px; color: #5b6273; line-height: 1.75; margin-bottom: 6px; padding-left: 14px; position: relative; }
+  .note-point::before { content: ''; position: absolute; left: 0; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: #4361ee; }
+  .note-divider { border: none; border-top: 1px dashed #e3e7f0; margin: 14px 0; }
+  .note-link { font-size: 12px; color: #4361ee; text-decoration: none; }
+  .note-link:hover { text-decoration: underline; }
+
+  /* ---------- 手机外壳 ---------- */
+  .phone {
+    width: 375px; height: 760px; background: #f4f6fb; border-radius: 40px;
+    box-shadow: 0 24px 60px rgba(31,36,48,.25), 0 0 0 10px #1f2430, 0 0 0 12px #3a4050;
+    display: flex; flex-direction: column; overflow: hidden; position: relative;
+    font-size: 14px; line-height: 1.6;
+  }
+  .statusbar {
+    height: 40px; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 22px; font-size: 12px;
+    font-weight: 600; background: #4361ee; color: #fff; z-index: 5;
+  }
+  .navbar {
+    height: 44px; flex-shrink: 0; background: #4361ee; color: #fff; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15.5px; font-weight: 600; z-index: 5;
+  }
+  .nav-back {
+    position: absolute; left: 12px; top: 0; bottom: 0; display: flex; align-items: center;
+    font-size: 13px; font-weight: 400; cursor: pointer; opacity: .95;
+  }
+  .screen { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+  .screen::-webkit-scrollbar { width: 0; }
+
+  .tabbar {
+    height: 52px; flex-shrink: 0; background: #fff; border-top: 1px solid #f0f2f7;
+    display: flex; z-index: 10;
+  }
+  .tabbar.hidden { display: none; }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 6px;
+    font-size: 10.5px; color: #8a90a0; cursor: pointer; gap: 1px;
+  }
+  .tab-item .ti { font-size: 19px; line-height: 1; filter: grayscale(1); opacity: .55; }
+  .tab-item.active { color: #4361ee; font-weight: 600; }
+  .tab-item.active .ti { filter: none; opacity: 1; }
+
+  /* ---------- 通用（源自 app.wxss，rpx÷2） ---------- */
+  .page { padding: 12px 12px 24px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(31,36,48,.06); overflow: hidden; }
+  .card + .card { margin-top: 12px; }
+  .card-hd { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px 0; font-size: 15px; font-weight: 600; }
+  .card-bd { padding: 10px 14px 14px; }
+  .row { display: flex; align-items: center; }
+  .between { justify-content: space-between; }
+  .flex1 { flex: 1; min-width: 0; }
+  .mt8 { margin-top: 4px; } .mt24 { margin-top: 12px; }
+  .subtitle { font-size: 14px; font-weight: 600; }
+  .muted { color: #8a90a0; font-size: 12px; }
+  .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clamp2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; line-height: 1.6; white-space: nowrap; }
+  .tag-warn { background: #fff3e0; color: #e08600; }
+  .tag-info { background: #e8f0ff; color: #4361ee; }
+  .tag-ok { background: #e6f7ef; color: #12a05c; }
+  .tag-danger { background: #ffecec; color: #e63946; }
+  .tag-gray { background: #f0f2f7; color: #8a90a0; }
+  .btn { display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 4px 10px rgba(67,97,238,.28); }
+  .btn-ghost { background: #eef2ff; color: #4361ee; }
+  .btn-danger { background: #ffecec; color: #e63946; }
+  .btn-sm { height: 30px; padding: 0 14px; font-size: 12px; }
+  .btn-block { width: 100%; }
+  .input, textarea.input {
+    width: 100%; background: #fbfcfe; border: 1px solid #e6e9f0; border-radius: 8px;
+    padding: 10px 12px; font-size: 14px; color: #1f2430; outline: none; font-family: inherit;
+  }
+  textarea.input { resize: none; }
+  .input::placeholder { color: #b6bcc9; }
+  .form-item { margin-bottom: 13px; }
+  .label { font-size: 13px; color: #5b6273; margin-bottom: 6px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #7b8cff, #4361ee); color: #fff;
+    font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  }
+  .avatar-lg { width: 58px; height: 58px; font-size: 23px; }
+  .fab {
+    position: absolute; right: 18px; bottom: 66px; width: 50px; height: 50px; border-radius: 50%;
+    background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 15px rgba(67,97,238,.4); cursor: pointer; z-index: 20;
+  }
+  .filters { display: flex; background: #fff; border-radius: 999px; padding: 4px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(31,36,48,.06); }
+  .filter { flex: 1; text-align: center; padding: 7px 0; border-radius: 999px; font-size: 13px; color: #6b7280; cursor: pointer; }
+  .filter.active { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; font-weight: 600; }
+  .end-tip { text-align: center; color: #a0a6b5; font-size: 12px; padding: 15px 0; }
+
+  /* ---------- 首页 ---------- */
+  .home { padding-top: 0; }
+  .hero {
+    margin: 0 -12px; padding: 16px 20px 48px; color: #fff;
+    background: linear-gradient(140deg, #4361ee 0%, #3a0ca3 100%);
+    border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+  }
+  .hello { font-size: 19px; font-weight: 700; }
+  .room { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,.72); }
+  .hero .avatar { background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.4); }
+  .hero-panel {
+    margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25);
+    display: flex; align-items: center;
+  }
+  .biz-tip {
+    margin-top: -32px; position: relative; z-index: 2; display: flex; align-items: center;
+    padding: 15px 16px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(31,36,48,.06);
+  }
+  .grid { display: flex; flex-wrap: wrap; padding: 16px 0 10px; }
+  .grid-item { width: 25%; display: flex; flex-direction: column; align-items: center; margin-bottom: 16px; cursor: pointer; }
+  .grid-icon { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 21px; }
+  .grid-text { margin-top: 6px; font-size: 12px; color: #4a5162; }
+  .footer-tip { margin-top: 20px; text-align: center; font-size: 11px; color: #aab0bf; }
+
+  /* ---------- 报修/账单 ---------- */
+  .repair, .bill { padding: 14px; }
+  .repair + .repair, .bill + .bill { margin-top: 10px; }
+  .desc { margin-top: 6px; font-size: 13px; color: #5b6273; line-height: 1.6; }
+  .images { display: flex; flex-wrap: wrap; margin-top: 8px; }
+  .img-ph {
+    width: 76px; height: 76px; border-radius: 8px; margin: 0 6px 6px 0; font-size: 26px;
+    background: linear-gradient(135deg,#e8ecf5,#dfe4ef); display: flex; align-items: center; justify-content: center;
+  }
+  .summary { padding: 18px 16px; border-radius: 12px; background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 8px 18px rgba(67,97,238,.28); }
+  .summary-label { font-size: 12px; color: rgba(255,255,255,.78); }
+  .summary-amount { margin-top: 4px; font-size: 32px; font-weight: 700; line-height: 1.1; }
+  .summary-icon { font-size: 36px; opacity: .9; }
+  .summary-tip { margin-top: 8px; font-size: 11px; color: rgba(255,255,255,.65); }
+  .bill-right { text-align: right; margin-left: 10px; }
+  .bill-money { font-size: 18px; font-weight: 700; margin-bottom: 5px; }
+  .bill-action { display: flex; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f7; }
+  .help { margin-top: 20px; text-align: center; font-size: 12px; color: #8a90a0; text-decoration: underline; }
+
+  /* ---------- 时间线 ---------- */
+  .timeline { padding: 6px 0 2px; }
+  .tl-item { display: flex; }
+  .tl-left { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #c9d2e8; margin-top: 4px; }
+  .tl-item.done .tl-dot { background: #12a05c; }
+  .tl-item.now .tl-dot { background: #4361ee; box-shadow: 0 0 0 4px rgba(67,97,238,.18); }
+  .tl-line { width: 2px; flex: 1; background: #e3e7f0; margin: 2px 0; }
+  .tl-body { flex: 1; padding: 0 0 18px 12px; font-size: 13px; }
+  .tl-title { font-weight: 600; }
+  .tl-time { font-size: 11.5px; color: #a0a6b5; margin-top: 2px; }
+
+  /* ---------- 论坛 ---------- */
+  .post { padding: 14px; }
+  .post + .post { margin-top: 10px; }
+  .post-title { font-size: 14.5px; font-weight: 600; }
+  .post-body { margin-top: 6px; font-size: 13px; color: #5b6273; line-height: 1.65; }
+  .post-foot { display: flex; align-items: center; margin-top: 10px; font-size: 12px; color: #8a90a0; }
+  .post-foot .like { cursor: pointer; margin-left: auto; }
+  .reply-item { padding: 10px 0; border-top: 1px solid #f2f4f8; }
+  .reply-input { display: flex; gap: 8px; margin-top: 12px; }
+  .reply-input .input { flex: 1; }
+
+  /* ---------- 我的 ---------- */
+  .mine { padding-top: 0; }
+  .profile {
+    margin: 0 -12px 12px; padding: 20px 20px 16px; color: #fff;
+    background: linear-gradient(140deg, #4361ee 0%, #3a0ca3 100%);
+    border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+  }
+  .profile-avatar { background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.4); position: relative; cursor: pointer; }
+  .avatar-badge {
+    position: absolute; right: -1px; bottom: -1px; width: 19px; height: 19px; border-radius: 50%;
+    background: #fff; border: 1.5px solid #4361ee; font-size: 10px;
+    display: flex; align-items: center; justify-content: center; z-index: 3;
+  }
+  .profile-name { font-size: 19px; font-weight: 700; }
+  .profile-sub { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,.75); }
+  .edit-btn { padding: 5px 13px; border-radius: 999px; border: 1px solid rgba(255,255,255,.5); font-size: 12px; cursor: pointer; }
+  .profile-stats { display: flex; margin-top: 18px; padding: 12px 0; border-radius: 10px; background: rgba(255,255,255,.14); }
+  .pstat { flex: 1; text-align: center; }
+  .pstat-n { font-size: 19px; font-weight: 700; }
+  .pstat-l { margin-top: 2px; font-size: 11px; color: rgba(255,255,255,.72); }
+  .menu { display: flex; align-items: center; padding: 15px 14px; border-bottom: 1px solid #f2f4f8; cursor: pointer; }
+  .menu:last-child { border-bottom: none; }
+  .menu-icon { font-size: 17px; margin-right: 10px; }
+  .menu-text { flex: 1; font-size: 14px; color: #2c3240; }
+  .menu-arrow { color: #c2c8d4; font-size: 17px; }
+  .version { margin: 20px 0 10px; text-align: center; font-size: 11px; color: #b0b6c4; }
+
+  /* ---------- 登录 ---------- */
+  .login-wrap {
+    min-height: 100%; padding: 0 24px; display: flex; flex-direction: column;
+    background: linear-gradient(160deg, #4361ee 0%, #3a0ca3 55%, #2b0a78 100%);
+  }
+  .brand { padding: 54px 0 28px; text-align: center; color: #fff; }
+  .brand-logo { font-size: 48px; line-height: 1; margin-bottom: 12px; }
+  .brand-name { font-size: 21px; font-weight: 700; letter-spacing: 1px; }
+  .brand-sub { margin-top: 6px; font-size: 12px; color: rgba(255,255,255,.75); letter-spacing: 2px; }
+  .login-card { border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); background: #fff; }
+  .tabs { display: flex; border-bottom: 1px solid #eef0f5; }
+  .tab { flex: 1; text-align: center; padding: 14px 0; font-size: 15px; color: #8a90a0; position: relative; cursor: pointer; }
+  .tab.active { color: #4361ee; font-weight: 600; }
+  .tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 32px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, #4361ee, #f72585); }
+  .hint { margin-top: 12px; text-align: center; font-size: 12px; color: #a0a6b5; }
+  .server { margin-top: auto; padding: 22px 0 28px; text-align: center; font-size: 11px; color: rgba(255,255,255,.65); }
+
+  /* ---------- 服务/活动 ---------- */
+  .svc { padding: 14px; display: flex; align-items: center; }
+  .svc + .svc { margin-top: 10px; }
+  .svc-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; margin-right: 12px; flex-shrink: 0; }
+  .svc-price { color: #e63946; font-weight: 700; font-size: 15px; }
+  .act { padding: 14px; }
+  .act + .act { margin-top: 10px; }
+
+  /* ---------- 公告 ---------- */
+  .notice-item { padding: 14px; cursor: pointer; }
+  .notice-item + .notice-item { margin-top: 10px; }
+  .notice-content { padding: 16px; font-size: 13.5px; line-height: 1.9; color: #3c4354; }
+  .notice-foot { padding: 12px 16px; border-top: 1px solid #f2f4f8; font-size: 11px; color: #a0a6b5; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; left: 50%; top: 46%; transform: translate(-50%,-50%);
+    background: rgba(31,36,48,.88); color: #fff; font-size: 13.5px;
+    padding: 11px 22px; border-radius: 10px; z-index: 999; opacity: 0;
+    transition: opacity .2s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 960px) {
+    .side-right { display: none; }
+  }
+  @media (max-width: 700px) {
+    .side-left { display: none; }
+    .phone { transform: scale(.9); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">🏘</span>
+  <span class="title">智慧社区服务平台 · 原型演示</span>
+  <span class="ver">v1.0</span>
+  <div class="links">
+    <a href="智慧社区小程序_课堂作业交付.docx">📄 需求文档 PRD</a>
+    <a href="#" onclick="alert('演示账号：demo / 123456\n本原型为纯前端交互演示，数据为演示数据。');return false;">🔑 演示账号</a>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="side-left" id="navTree"></aside>
+
+  <main class="stage">
+    <div class="phone">
+      <div class="statusbar"><span>11:58</span><span>5G ▮▮▮</span></div>
+      <div class="navbar">
+        <span class="nav-back" id="navBack" style="display:none;" onclick="goBack()">‹ 返回</span>
+        <span id="navTitle">智慧社区</span>
+      </div>
+      <div class="screen" id="screen"></div>
+      <div class="tabbar hidden" id="tabbar">
+        <div class="tab-item" data-page="home"><span class="ti">🏠</span>首页</div>
+        <div class="tab-item" data-page="repair"><span class="ti">🔧</span>报修</div>
+        <div class="tab-item" data-page="bill"><span class="ti">💳</span>账单</div>
+        <div class="tab-item" data-page="mine"><span class="ti">👤</span>我的</div>
+      </div>
+    </div>
+    <div class="caption" id="caption"></div>
+  </main>
+
+  <aside class="side-right">
+    <div class="note-title" id="noteTitle"></div>
+    <div id="notePoints"></div>
+    <hr class="note-divider">
+    <a class="note-link" href="智慧社区小程序_课堂作业交付.docx">🔗 查看完整 PRD 文档 ›</a>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== 演示数据 ==================== */
+const USER = { name: 'demo', room: '3-502', phone: '13800001234' };
+
+let repairs = [
+  { id: 1, title: '厨房水管接口漏水', desc: '水槽下方水管接口处持续渗水，地上已经积水，需要师傅尽快上门处理。', status: '待处理', time: '2026-10-27 09:12', imgs: 2 },
+  { id: 2, title: '客厅吸顶灯不亮', desc: '客厅主灯开关无反应，更换灯泡后仍不亮，怀疑是线路问题，需要电工检查。', status: '处理中', time: '2026-10-20 18:30', imgs: 1 },
+  { id: 3, title: '卧室空调异响', desc: '空调开启后外机有明显异响，夜间影响休息。', status: '已完成', time: '2026-10-08 11:05', imgs: 0 }
+];
+let repairFilter = '全部';
+
+let bills = [
+  { id: 1, type: '物业费 2026年10月', money: 680.00, status: '未缴费', create: '2026-10-01 10:00', payTime: '' },
+  { id: 2, type: '水费 2026年10月', money: 128.00, status: '未缴费', create: '2026-10-01 10:00', payTime: '' },
+  { id: 3, type: '停车费 2026年10月', money: 530.00, status: '未缴费', create: '2026-10-01 10:00', payTime: '' },
+  { id: 4, type: '电梯维护费 2026年9月', money: 120.00, status: '已缴费', create: '2026-09-01 10:00', payTime: '2026-09-03 14:20' }
+];
+let billFilter = '全部';
+
+let posts = [
+  { id: 1, user: '林雨', title: '小区里的桂花开了，香了一整条路', content: '今天早上出门闻到特别浓的桂花香，3 号楼到南门这一路全是，忍不住拍了好多照片。住低楼层的邻居开窗应该也能闻到，秋天真的到了。', likes: 12, liked: false, time: '2026-10-27 08:20', replies: [{ user: 'demo', content: '是的！我家阳台正对着那几棵，幸福感拉满。' }, { user: 'CWY', content: '求问具体位置，下班想去看看。' }] },
+  { id: 2, user: 'demo', title: '地下车库新装的充电桩可以用了', content: 'B 区新增的两排新能源充电桩今天通电了，扫码就能充，我试了一下功率挺稳。有需要的车友可以去看看，目前用的人不多不用排队。', likes: 9, liked: false, time: '2026-10-26 19:45', replies: [{ user: '林雨', content: '太好了，终于不用去外面排队了。' }] },
+  { id: 3, user: 'CWY', title: '建议电梯里加一个置物架', content: '搬快递或者买菜回来的时候，手里东西多按电梯很不方便。如果在轿厢角落装一个小的折叠置物架，临时放一下东西会方便很多，大家觉得可行吗？', likes: 15, liked: true, time: '2026-10-25 12:10', replies: [{ user: 'demo', content: '支持，抱孩子的时候也特别需要。' }] },
+  { id: 4, user: '林雨', title: '天气转凉，记得检查家里水管', content: '去年冬天有邻居家水管冻裂淹了厨房。趁还没降温，大家检查一下阳台和厨房的水管保温，外露的管子可以包一层保温棉，五金店几块钱一米。', likes: 14, liked: false, time: '2026-10-18 21:05', replies: [{ user: 'demo', content: '提醒及时，这就去检查。' }] }
+];
+
+const notices = [
+  { id: 1, title: '关于小区地下车库出入口改造施工的通知', time: '2026-10-27 09:30', content: '各位业主：\n\n为提升车库通行效率，物业定于 11 月 3 日至 11 月 15 日对地下车库南门出入口进行改造施工。施工期间南门出入口封闭，请车辆统一从北门出入口通行。\n\n施工期间带来的不便敬请谅解，感谢您的配合。' },
+  { id: 2, title: '冬季供暖试水通知', time: '2026-10-25 14:00', content: '各位业主：\n\n本年度供暖季即将来临，物业将于 10 月 30 日 9:00-17:00 进行供暖管网试水。请您家中留人，注意观察暖气片、管道接口是否有渗漏，如有异常请及时联系物业或在线报修。' },
+  { id: 3, title: '关于规范非机动车停放的通知', time: '2026-10-20 10:00', content: '为保障消防通道畅通，请将电动车、自行车停放至指定车棚。楼道内、单元门口禁止停放车辆、禁止飞线充电。物业将不定期巡查清理，感谢您的理解与配合。' }
+];
+
+let activities = [
+  { id: 1, name: '秋季业主趣味运动会', date: '2026-11-05', signed: true, count: 36 },
+  { id: 2, name: '重阳节敬老茶话会', date: '2026-10-29', signed: false, count: 18 },
+  { id: 3, name: '社区亲子手工课堂', date: '2026-11-08', signed: false, count: 12 }
+];
+
+const services = [
+  { id: 1, name: '日常保洁（2小时）', price: 88, icon: '🧹', bg: '#e9f9f1', desc: '客厅卧室除尘、地面清洁、垃圾清运' },
+  { id: 2, name: '家电深度清洗', price: 128, icon: '🧺', bg: '#e8f6ff', desc: '油烟机 / 空调 / 洗衣机深度拆洗' },
+  { id: 3, name: '水电维修上门', price: 50, icon: '🔧', bg: '#fff4e5', desc: '水龙头更换、电路检修（配件另计）' },
+  { id: 4, name: '管道疏通', price: 100, icon: '🚿', bg: '#f0edff', desc: '地漏、马桶、下水管道专业疏通' }
+];
+
+let decorations = [
+  { id: 1, date: '2026-10-20', content: '厨房整体翻新：更换橱柜、台面及墙砖，施工期约 7 天，每天 9:00-17:00，周末不施工。', status: '已批准' },
+  { id: 2, date: '2026-11-05', content: '阳台封窗改造，更换断桥铝窗户并加装防护栏，预计施工 3 天。', status: '待审批' }
+];
+
+let feedbacks = [
+  { id: 1, content: '电梯运行时的噪音最近有点大，尤其是早上，麻烦物业安排维保检查一下导轨。', reply: '已联系维保单位，本周四上午上门检查，感谢反馈。', status: '已回复', time: '2026-10-24 08:40' },
+  { id: 2, content: '建议在南门快递柜旁增设雨棚，下雨天取快递不方便。', reply: '', status: '待回复', time: '2026-10-26 19:22' }
+];
+
+/* ==================== 页面目录与说明 ==================== */
+const TREE = [
+  { group: '入口', items: [{ id: 'login', name: '登录 / 注册' }] },
+  { group: '主导航', items: [
+    { id: 'home', name: '首页' }, { id: 'repair', name: '我的报修' },
+    { id: 'bill', name: '缴费中心' }, { id: 'mine', name: '我的' }
+  ]},
+  { group: '报修流程', items: [
+    { id: 'repairCreate', name: '提交报修' }, { id: 'repairDetail', name: '报修详情' }
+  ]},
+  { group: '邻里互动', items: [
+    { id: 'forum', name: '业主交流' }, { id: 'postDetail', name: '帖子详情' }, { id: 'postCreate', name: '发布帖子' }
+  ]},
+  { group: '社区服务', items: [
+    { id: 'service', name: '上门服务' }, { id: 'serviceBook', name: '服务预约' },
+    { id: 'activity', name: '社区活动' }, { id: 'notice', name: '小区公告' }, { id: 'noticeDetail', name: '公告详情' }
+  ]},
+  { group: '物业事务', items: [
+    { id: 'decoration', name: '装修申请' }, { id: 'feedback', name: '投诉建议' }, { id: 'profile', name: '修改资料' }
+  ]}
+];
+
+const NOTES = {
+  login: { caption: '深蓝渐变品牌页，登录与注册同卡切换', points: ['品牌区：logo + 产品名 + 服务口号', '登录 / 注册双 Tab 切换，注册可绑定房号', '底部显示当前服务器地址，支持切换环境', 'Token 有效期 7 天，过期自动回到本页'] },
+  home: { caption: '分时段问候 + 语录 + 待办提示 + 八宫格', points: ['按时段问候（早上好/下午好…），右侧头像', '温馨语录卡：每次登录轮换一条，共三条', '待办提示条：有未缴账单时橙色高亮，点「去处理」直达缴费', '八宫格聚合全部功能入口，公告与活动卡片直达详情'] },
+  repair: { caption: '四状态筛选胶囊 + 工单卡片流', points: ['筛选胶囊：全部 / 待处理 / 处理中 / 已完成', '卡片展示标题、时间、描述摘要与状态标签', '右下角 ＋ 悬浮按钮进入提交页', '点卡片进入详情查看处理进度'] },
+  repairCreate: { caption: '图文报修表单，最多 6 张现场照片', points: ['标题 + 详细描述 + 照片上传', '图片九宫格排列，可删除重传', '提交后工单状态为「待处理」，列表即时可见'] },
+  repairDetail: { caption: '工单详情 + 进度时间线', points: ['完整展示描述与现场图片（可放大预览）', '进度时间线：提交 → 接单处理中 → 完成', '物业在 Web 管理端更新状态，业主端实时同步'] },
+  bill: { caption: '待缴总额渐变卡 + 账单列表', points: ['顶部汇总卡实时计算未缴总额', '按类型展示物业费 / 水费 / 电费 / 停车费', '点「去缴费」确认后完成缴费并记录时间', '缴清后首页待办提示自动消失'] },
+  mine: { caption: '个人资料 + 业务统计 + 功能菜单', points: ['渐变资料区：头像（可点击更换）、用户名、房号手机号', '四项业务统计：报修 / 账单 / 帖子 / 活动', '两组功能菜单直达各业务页面', '底部退出登录，回到登录页'] },
+  forum: { caption: '邻里帖子流，支持点赞', points: ['帖子按时间倒序展示，含作者头像', '点 ♥ 点赞 / 取消，同一用户只能点一次', '点卡片进入详情查看回复', '右下角 ＋ 发布新帖'] },
+  postDetail: { caption: '帖子正文 + 回复列表 + 快捷回复', points: ['完整展示帖子内容与点赞数', '回复按时间正序排列', '底部输入框可直接发送回复'] },
+  postCreate: { caption: '发布新帖，支持带图', points: ['标题 + 正文 + 可选图片', '发布后回到列表并置顶显示'] },
+  service: { caption: '上门服务目录，明码标价', points: ['保洁 / 清洗 / 维修 / 疏通四类服务', '展示服务内容与价格', '点「预约」进入时间选择'] },
+  serviceBook: { caption: '选择服务与时间，一键预约', points: ['选择期望上门日期与时间段', '备注栏可填写特殊要求', '预约成功后自动生成待缴账单'] },
+  activity: { caption: '社区活动报名 / 取消', points: ['展示活动日期与已报名人数', '点「立即报名」状态切换为「已报名」', '同一活动不可重复报名'] },
+  notice: { caption: '公告列表，按发布时间倒序', points: ['标题 + 发布时间两行摘要', '点击进入公告详情'] },
+  noticeDetail: { caption: '公告完整内容与落款', points: ['完整正文分段展示', '页脚显示发布方与发布时间'] },
+  decoration: { caption: '装修报备 + 审批状态', points: ['选择开工日期、填写施工说明', '列表展示历史申请及审批状态', '状态：待审批 / 已批准 / 已拒绝'] },
+  feedback: { caption: '投诉建议提交，物业回复可见', points: ['填写投诉或建议内容并提交', '物业回复直接在卡片下方展示', '状态：待回复 / 已回复'] },
+  profile: { caption: '修改房号与手机号', points: ['房号、手机号表单回显当前值', '输入框高度已优化，文字完整显示', '保存后我的页与首页同步更新'] }
+};
+
+const TAB_PAGES = ['home', 'repair', 'bill', 'mine'];
+const TITLES = {
+  login: '智慧社区', home: '智慧社区', repair: '我的报修', bill: '缴费中心', mine: '我的',
+  repairCreate: '提交报修', repairDetail: '报修详情', forum: '业主交流', postDetail: '帖子详情',
+  postCreate: '发布帖子', service: '上门服务', serviceBook: '服务预约', activity: '社区活动',
+  notice: '小区公告', noticeDetail: '公告详情', decoration: '装修申请', feedback: '投诉建议', profile: '修改资料'
+};
+
+/* ==================== 工具 ==================== */
+let history = [];
+let current = 'login';
+let currentPostId = 1;
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+function statusTag(s) {
+  return { '待处理': 'tag-warn', '处理中': 'tag-info', '已完成': 'tag-ok', '已拒绝': 'tag-danger',
+           '未缴费': 'tag-warn', '已缴费': 'tag-ok', '待审批': 'tag-warn', '已批准': 'tag-ok',
+           '待回复': 'tag-warn', '已回复': 'tag-ok' }[s] || 'tag-gray';
+}
+function imgPh(n) {
+  let h = '';
+  for (let i = 0; i < n; i++) h += '<div class="img-ph">🖼</div>';
+  return h ? '<div class="images">' + h + '</div>' : '';
+}
+
+/* ==================== 页面渲染 ==================== */
+const R = {
+  login: () => `
+    <div class="login-wrap">
+      <div class="brand">
+        <div class="brand-logo">🏘</div>
+        <div class="brand-name">智慧社区服务平台</div>
+        <div class="brand-sub">报修 · 缴费 · 邻里 · 服务</div>
+      </div>
+      <div class="login-card">
+        <div class="tabs">
+          <div class="tab active" onclick="this.parentNode.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">登录</div>
+          <div class="tab" onclick="this.parentNode.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">注册</div>
+        </div>
+        <div class="card-bd">
+          <div class="form-item"><div class="label">用户名</div><input class="input" value="demo" placeholder="请输入用户名"></div>
+          <div class="form-item"><div class="label">密码</div><input class="input" type="password" value="123456" placeholder="至少 6 位"></div>
+          <div class="btn btn-primary btn-block mt24" onclick="toast('登录成功');go('home',true)">登 录</div>
+          <div class="hint">演示账号：demo / 123456</div>
+        </div>
+      </div>
+      <div class="server">服务器：http://192.168.43.132:5000/api/v1</div>
+    </div>`,
+
+  home: () => {
+    const unpaid = bills.filter(b => b.status === '未缴费').length;
+    return `
+    <div class="page home">
+      <div class="hero">
+        <div class="row between">
+          <div class="flex1">
+            <div class="hello">中午好，${USER.name}</div>
+            <div class="room">${USER.room} · 业主</div>
+          </div>
+          <div class="avatar avatar-lg">${USER.name[0].toUpperCase()}</div>
+        </div>
+        <div class="hero-panel">
+          <div style="font-size:20px;line-height:1;margin-right:8px;margin-top:3px;color:rgba(255,255,255,.55);font-family:Georgia,serif;">❝</div>
+          <div style="flex:1;font-size:13.5px;font-weight:600;line-height:1.9;letter-spacing:1.5px;color:rgba(255,255,255,.94);">把日子过成诗，把社区当成家，愿每一份归途都有灯火相迎。</div>
+        </div>
+      </div>
+      ${unpaid > 0 ? `
+      <div class="biz-tip">
+        <span style="font-size:17px;margin-right:9px;">💰</span>
+        <span style="flex:1;font-size:13.5px;color:#e08600;font-weight:600;">您有待缴费业务需要处理</span>
+        <span style="font-size:12px;color:#4361ee;font-weight:600;cursor:pointer;" onclick="go('bill')">去处理 ›</span>
+      </div>` : `
+      <div class="biz-tip">
+        <span style="font-size:17px;margin-right:9px;">✨</span>
+        <span style="flex:1;font-size:13.5px;color:#8a90a0;">暂无其他业务事项</span>
+      </div>`}
+      <div class="card">
+        <div class="grid">
+          ${[
+            ['小区公告','📢','#eef2ff','notice'], ['我要报修','🔧','#fff4e5','repair'],
+            ['缴费中心','💰','#e9f9f1','bill'], ['业主交流','💬','#f0edff','forum'],
+            ['上门服务','🛠','#e8f6ff','service'], ['社区活动','🎉','#ffeef5','activity'],
+            ['装修申请','🏠','#fff8e1','decoration'], ['投诉建议','📝','#eef7ee','feedback']
+          ].map(([t,i,b,p]) => `
+            <div class="grid-item" onclick="go('${p}')">
+              <div class="grid-icon" style="background:${b}">${i}</div>
+              <div class="grid-text">${t}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="go('noticeDetail')">
+        <div class="card-hd"><span>最新公告</span><span class="muted" onclick="event.stopPropagation();go('notice')">全部 ›</span></div>
+        <div class="card-bd">
+          <div class="subtitle ellipsis">${notices[0].title}</div>
+          <div class="muted mt8">${notices[0].time}</div>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="go('activity')">
+        <div class="card-hd"><span>近期活动</span><span class="muted">查看全部 ›</span></div>
+        <div class="card-bd row between">
+          <div class="flex1">
+            <div class="subtitle">${activities[0].name}</div>
+            <div class="muted mt8">活动日期 ${activities[0].date}</div>
+          </div>
+          <div class="tag tag-info">报名中</div>
+        </div>
+      </div>
+      <div class="footer-tip">智慧社区服务平台</div>
+    </div>`;
+  },
+
+  repair: () => {
+    const list = repairs.filter(r => repairFilter === '全部' || r.status === repairFilter);
+    return `
+    <div class="page">
+      <div class="filters">
+        ${['全部','待处理','处理中','已完成'].map(f =>
+          `<div class="filter${f===repairFilter?' active':''}" onclick="repairFilter='${f}';rerender()">${f}</div>`).join('')}
+      </div>
+      ${list.length ? list.map(r => `
+      <div class="card repair" style="cursor:pointer;" onclick="go('repairDetail')">
+        <div class="row between">
+          <div class="subtitle flex1 ellipsis">${r.title}</div>
+          <div class="tag ${statusTag(r.status)}">${r.status}</div>
+        </div>
+        <div class="muted mt8">${r.time}</div>
+        <div class="desc clamp2">${r.desc}</div>
+      </div>`).join('') : '<div class="end-tip">暂无相关工单</div>'}
+      <div class="end-tip">— 没有更多了 —</div>
+    </div>
+    <div class="fab" onclick="go('repairCreate')">＋</div>`;
+  },
+
+  repairCreate: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd">
+        <div class="form-item"><div class="label">报修标题</div><input class="input" id="rpTitle" placeholder="例如：厨房水管漏水"></div>
+        <div class="form-item"><div class="label">问题描述</div><textarea class="input" id="rpDesc" rows="4" placeholder="请描述具体问题、位置和方便上门的时间"></textarea></div>
+        <div class="form-item">
+          <div class="label">现场照片（最多 6 张）</div>
+          <div class="images">
+            <div class="img-ph" style="border:1px dashed #c2c8d4;background:#fbfcfe;color:#a0a6b5;cursor:pointer;" onclick="toast('打开相册/拍照')">＋</div>
+          </div>
+        </div>
+        <div class="btn btn-primary btn-block" onclick="submitRepair()">提交报修</div>
+      </div></div>
+    </div>`,
+
+  repairDetail: () => {
+    const r = repairs[0];
+    const step = { '待处理': 0, '处理中': 1, '已完成': 2 }[r.status] || 0;
+    return `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="row between">
+          <div class="subtitle flex1">${r.title}</div>
+          <div class="tag ${statusTag(r.status)}">${r.status}</div>
+        </div>
+        <div class="muted mt8">报修时间 ${r.time}</div>
+        <div class="desc">${r.desc}</div>
+        ${imgPh(Math.max(r.imgs, 2))}
+      </div></div>
+      <div class="card">
+        <div class="card-hd"><span>处理进度</span></div>
+        <div class="card-bd">
+          <div class="timeline">
+            <div class="tl-item done">
+              <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-title">工单已提交</div><div class="tl-time">${r.time}</div></div>
+            </div>
+            <div class="tl-item ${step >= 1 ? (step === 1 ? 'now' : 'done') : ''}">
+              <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+              <div class="tl-body"><div class="tl-title">物业已接单，师傅处理中</div><div class="tl-time">${step >= 1 ? '2026-10-27 14:30' : '待处理'}</div></div>
+            </div>
+            <div class="tl-item ${step === 2 ? 'done' : ''}">
+              <div class="tl-left"><div class="tl-dot"></div></div>
+              <div class="tl-body"><div class="tl-title">工单完成</div><div class="tl-time">${step === 2 ? '2026-10-28 10:15' : '待完成'}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="help" onclick="toast('拨打物业电话 029-8888xxxx')">进度有疑问？联系物业</div>
+    </div>`;
+  },
+
+  bill: () => {
+    const unpaidSum = bills.filter(b => b.status === '未缴费').reduce((s, b) => s + b.money, 0);
+    const list = bills.filter(b => billFilter === '全部' || b.status === billFilter);
+    return `
+    <div class="page">
+      <div class="summary">
+        <div class="row between">
+          <div>
+            <div class="summary-label">待缴总额（元）</div>
+            <div class="summary-amount">${unpaidSum.toFixed(2)}</div>
+          </div>
+          <div class="summary-icon">💰</div>
+        </div>
+        <div class="summary-tip">缴费问题请联系物业服务中心</div>
+      </div>
+      <div class="filters" style="margin:12px 0;">
+        ${['全部','未缴费','已缴费'].map(f =>
+          `<div class="filter${f===billFilter?' active':''}" onclick="billFilter='${f}';rerender()">${f}</div>`).join('')}
+      </div>
+      ${list.map(b => `
+      <div class="card bill">
+        <div class="row between">
+          <div class="flex1">
+            <div class="subtitle">${b.type}</div>
+            <div class="muted mt8">创建于 ${b.create}</div>
+            ${b.payTime ? `<div class="muted">缴费时间 ${b.payTime}</div>` : ''}
+          </div>
+          <div class="bill-right">
+            <div class="bill-money">¥ ${b.money.toFixed(2)}</div>
+            <div class="tag ${statusTag(b.status)}">${b.status}</div>
+          </div>
+        </div>
+        ${b.status === '未缴费' ? `<div class="bill-action"><div class="btn btn-primary btn-sm" onclick="payBill(${b.id})">去缴费</div></div>` : ''}
+      </div>`).join('')}
+      <div class="help" onclick="toast('拨打物业电话 029-8888xxxx')">账单有疑问？拨打物业电话</div>
+    </div>`;
+  },
+
+  forum: () => `
+    <div class="page">
+      ${posts.map(p => `
+      <div class="card post">
+        <div class="row">
+          <div class="avatar">${p.user[0]}</div>
+          <div style="margin-left:10px;" class="flex1">
+            <div style="font-size:13px;font-weight:600;">${p.user}</div>
+            <div class="muted">${p.time}</div>
+          </div>
+        </div>
+        <div style="cursor:pointer;" onclick="currentPostId=${p.id};go('postDetail')">
+          <div class="post-title" style="margin-top:10px;">${p.title}</div>
+          <div class="post-body clamp2">${p.content}</div>
+        </div>
+        <div class="post-foot">
+          <span>💬 ${p.replies.length} 条回复</span>
+          <span class="like" onclick="toggleLike(${p.id})">${p.liked ? '❤️' : '🤍'} ${p.likes}</span>
+        </div>
+      </div>`).join('')}
+      <div class="end-tip">— 没有更多了 —</div>
+    </div>
+    <div class="fab" onclick="go('postCreate')">＋</div>`,
+
+  postDetail: () => {
+    const p = posts.find(x => x.id === currentPostId) || posts[0];
+    return `
+    <div class="page">
+      <div class="card post">
+        <div class="row">
+          <div class="avatar">${p.user[0]}</div>
+          <div style="margin-left:10px;" class="flex1">
+            <div style="font-size:13px;font-weight:600;">${p.user}</div>
+            <div class="muted">${p.time}</div>
+          </div>
+          <span class="like" style="cursor:pointer;font-size:13px;" onclick="toggleLike(${p.id})">${p.liked ? '❤️' : '🤍'} ${p.likes}</span>
+        </div>
+        <div class="post-title" style="margin-top:12px;">${p.title}</div>
+        <div class="post-body">${p.content}</div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span>全部回复（${p.replies.length}）</span></div>
+        <div class="card-bd">
+          ${p.replies.map(r => `
+          <div class="reply-item">
+            <div class="row"><div class="avatar" style="width:28px;height:28px;font-size:12px;">${r.user[0]}</div>
+            <span style="margin-left:8px;font-size:12.5px;font-weight:600;">${r.user}</span></div>
+            <div style="font-size:13px;color:#3c4354;margin-top:6px;">${r.content}</div>
+          </div>`).join('')}
+          <div class="reply-input">
+            <input class="input" id="replyText" placeholder="友善回复，温暖邻里">
+            <div class="btn btn-primary btn-sm" style="height:40px;" onclick="sendReply()">发送</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  },
+
+  postCreate: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="form-item"><div class="label">帖子标题</div><input class="input" id="ptTitle" placeholder="一句话说明主题"></div>
+        <div class="form-item"><div class="label">正文内容</div><textarea class="input" id="ptContent" rows="6" placeholder="分享社区生活、闲置转让、求助打听…"></textarea></div>
+        <div class="form-item">
+          <div class="label">配图（可选）</div>
+          <div class="images"><div class="img-ph" style="border:1px dashed #c2c8d4;background:#fbfcfe;color:#a0a6b5;cursor:pointer;" onclick="toast('打开相册/拍照')">＋</div></div>
+        </div>
+        <div class="btn btn-primary btn-block" onclick="submitPost()">发 布</div>
+      </div></div>
+    </div>`,
+
+  service: () => `
+    <div class="page">
+      ${services.map(s => `
+      <div class="card svc">
+        <div class="svc-icon" style="background:${s.bg}">${s.icon}</div>
+        <div class="flex1">
+          <div class="subtitle">${s.name}</div>
+          <div class="muted mt8">${s.desc}</div>
+          <div class="svc-price mt8">¥ ${s.price}.00 起</div>
+        </div>
+        <div class="btn btn-primary btn-sm" onclick="go('serviceBook')">预约</div>
+      </div>`).join('')}
+      <div class="end-tip">服务由物业合作商提供，费用线上缴纳</div>
+    </div>`,
+
+  serviceBook: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="form-item"><div class="label">服务项目</div><input class="input" value="日常保洁（2小时）· ¥88" readonly></div>
+        <div class="form-item"><div class="label">期望日期</div><input class="input" type="date" value="2026-10-30"></div>
+        <div class="form-item"><div class="label">时间段</div>
+          <div class="filters" style="margin:0;">
+            <div class="filter active">上午 9-12</div><div class="filter">下午 14-17</div><div class="filter">晚上 18-20</div>
+          </div>
+        </div>
+        <div class="form-item"><div class="label">备注</div><textarea class="input" rows="3" placeholder="如：家里有宠物、需要带梯子等"></textarea></div>
+        <div class="btn btn-primary btn-block" onclick="toast('预约成功，已生成账单');go('bill',true)">提交预约</div>
+      </div></div>
+    </div>`,
+
+  activity: () => `
+    <div class="page">
+      ${activities.map(a => `
+      <div class="card act">
+        <div class="row between">
+          <div class="flex1">
+            <div class="subtitle">${a.name}</div>
+            <div class="muted mt8">活动日期 ${a.date} · 已报名 ${a.count} 人</div>
+          </div>
+          <div class="${a.signed ? 'btn btn-ghost' : 'btn btn-primary'} btn-sm" onclick="toggleAct(${a.id})">${a.signed ? '已报名 · 取消' : '立即报名'}</div>
+        </div>
+      </div>`).join('')}
+      <div class="end-tip">更多活动筹备中，敬请期待</div>
+    </div>`,
+
+  notice: () => `
+    <div class="page">
+      ${notices.map(n => `
+      <div class="card notice-item" onclick="go('noticeDetail')">
+        <div class="subtitle clamp2">${n.title}</div>
+        <div class="muted mt8">发布时间 ${n.time}</div>
+      </div>`).join('')}
+    </div>`,
+
+  noticeDetail: () => `
+    <div class="page">
+      <div class="card">
+        <div class="card-bd" style="padding-top:16px;">
+          <div style="font-size:17px;font-weight:700;line-height:1.5;">${notices[0].title}</div>
+          <div class="muted" style="margin-top:8px;">${notices[0].time}</div>
+        </div>
+        <div class="notice-content">${notices[0].content.replace(/\n/g, '<br>')}</div>
+        <div class="notice-foot">智慧社区服务平台 · 物业服务中心发布</div>
+      </div>
+    </div>`,
+
+  decoration: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="subtitle" style="margin-bottom:10px;">新增装修申请</div>
+        <div class="form-item"><div class="label">计划开工日期</div><input class="input" type="date" id="dcDate" value="2026-11-10"></div>
+        <div class="form-item"><div class="label">装修内容说明</div><textarea class="input" id="dcContent" rows="3" placeholder="施工项目、周期、每日施工时段等"></textarea></div>
+        <div class="btn btn-primary btn-block" onclick="submitDeco()">提交申请</div>
+      </div></div>
+      <div class="card">
+        <div class="card-hd"><span>我的申请（${decorations.length}）</span></div>
+        <div class="card-bd">
+          ${decorations.map(d => `
+          <div style="padding:10px 0;border-top:1px solid #f2f4f8;">
+            <div class="row between">
+              <span style="font-size:13.5px;font-weight:600;">开工日期 ${d.date}</span>
+              <span class="tag ${statusTag(d.status)}">${d.status}</span>
+            </div>
+            <div class="desc clamp2">${d.content}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`,
+
+  feedback: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="subtitle" style="margin-bottom:10px;">我要反馈</div>
+        <div class="form-item"><textarea class="input" id="fbContent" rows="3" placeholder="请输入您的投诉或建议，物业将在 24 小时内响应"></textarea></div>
+        <div class="btn btn-primary btn-block" onclick="submitFeedback()">提交反馈</div>
+      </div></div>
+      ${feedbacks.map(f => `
+      <div class="card" style="padding:14px;">
+        <div class="row between">
+          <span class="muted">${f.time}</span>
+          <span class="tag ${statusTag(f.status)}">${f.status}</span>
+        </div>
+        <div class="desc">${f.content}</div>
+        ${f.reply ? `
+        <div style="margin-top:10px;padding:10px 12px;background:#f6f8ff;border-radius:8px;">
+          <div style="font-size:12px;color:#4361ee;font-weight:600;">物业回复</div>
+          <div style="font-size:13px;color:#3c4354;margin-top:4px;line-height:1.6;">${f.reply}</div>
+        </div>` : ''}
+      </div>`).join('')}
+    </div>`,
+
+  mine: () => `
+    <div class="page mine">
+      <div class="profile">
+        <div class="row">
+          <div class="avatar avatar-lg profile-avatar" onclick="toast('选择头像：拍照 / 从相册选择')">
+            ${USER.name[0].toUpperCase()}<div class="avatar-badge">📷</div>
+          </div>
+          <div class="flex1" style="margin-left:12px;">
+            <div class="profile-name">${USER.name}</div>
+            <div class="profile-sub">房号 ${USER.room} · ${USER.phone}</div>
+          </div>
+          <div class="edit-btn" onclick="go('profile')">修改</div>
+        </div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="pstat-n">${repairs.filter(r=>r.status==='待处理').length}</div><div class="pstat-l">待处理报修</div></div>
+          <div class="pstat"><div class="pstat-n">${bills.filter(b=>b.status==='未缴费').length}</div><div class="pstat-l">未缴账单</div></div>
+          <div class="pstat"><div class="pstat-n">2</div><div class="pstat-l">我的帖子</div></div>
+          <div class="pstat"><div class="pstat-n">${activities.filter(a=>a.signed).length}</div><div class="pstat-l">报名活动</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="menu" onclick="go('repair')"><span class="menu-icon">🔧</span><span class="menu-text">我的报修</span><span class="menu-arrow">›</span></div>
+        <div class="menu" onclick="go('bill')"><span class="menu-icon">💰</span><span class="menu-text">我的账单</span><span class="menu-arrow">›</span></div>
+        <div class="menu" onclick="go('service')"><span class="menu-icon">🛠</span><span class="menu-text">上门服务</span><span class="menu-arrow">›</span></div>
+        <div class="menu" onclick="go('activity')"><span class="menu-icon">🎉</span><span class="menu-text">社区活动</span><span class="menu-arrow">›</span></div>
+        <div class="menu" onclick="go('decoration')"><span class="menu-icon">🏠</span><span class="menu-text">装修申请</span><span class="menu-arrow">›</span></div>
+        <div class="menu" onclick="go('feedback')"><span class="menu-icon">📝</span><span class="menu-text">投诉建议</span><span class="menu-arrow">›</span></div>
+      </div>
+      <div class="card">
+        <div class="menu" onclick="toast('拨打物业电话 029-8888xxxx')"><span class="menu-icon">📞</span><span class="menu-text">联系物业</span><span class="menu-arrow">›</span></div>
+      </div>
+      <div class="btn btn-danger btn-block mt24" onclick="go('login',true)">退出登录</div>
+      <div class="version">智慧社区 · 小程序端 v1.0</div>
+    </div>`,
+
+  profile: () => `
+    <div class="page">
+      <div class="card"><div class="card-bd" style="padding-top:14px;">
+        <div class="form-item"><div class="label">用户名</div><input class="input" value="${USER.name}" readonly style="color:#8a90a0;"></div>
+        <div class="form-item"><div class="label">房号</div><input class="input" id="pfRoom" value="${USER.room}" placeholder="如 3-502"></div>
+        <div class="form-item"><div class="label">手机号</div><input class="input" id="pfPhone" value="${USER.phone}" placeholder="11 位手机号"></div>
+        <div class="btn btn-primary btn-block" onclick="saveProfile()">保存修改</div>
+      </div></div>
+    </div>`
+};
+
+/* ==================== 交互逻辑 ==================== */
+function go(name, reset) {
+  if (reset) history = [];
+  else if (current !== name) history.push(current);
+  current = name;
+  rerender();
+}
+function goBack() {
+  current = history.pop() || 'home';
+  rerender();
+}
+function rerender() {
+  document.getElementById('screen').innerHTML = R[current]();
+  document.getElementById('screen').scrollTop = 0;
+  document.getElementById('navTitle').textContent = TITLES[current];
+  const isTab = TAB_PAGES.includes(current);
+  document.getElementById('tabbar').classList.toggle('hidden', !isTab);
+  document.getElementById('navBack').style.display = (isTab || current === 'login' || history.length === 0) ? 'none' : 'flex';
+
+  document.querySelectorAll('.tab-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.page === current));
+  document.querySelectorAll('.side-left .nav-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.page === current));
+
+  const note = NOTES[current] || { caption: '', points: [] };
+  document.getElementById('caption').innerHTML = '<b>' + TITLES[current] + '</b> — ' + note.caption;
+  document.getElementById('noteTitle').textContent = '📐 ' + TITLES[current] + ' · 设计说明';
+  document.getElementById('notePoints').innerHTML = note.points.map(p => '<div class="note-point">' + p + '</div>').join('');
+}
+
+function submitRepair() {
+  const t = document.getElementById('rpTitle').value.trim() || '新的报修工单';
+  const d = document.getElementById('rpDesc').value.trim() || '（未填写描述）';
+  repairs.unshift({ id: Date.now(), title: t, desc: d, status: '待处理', time: '2026-10-28 12:00', imgs: 0 });
+  toast('报修提交成功');
+  go('repair', true);
+}
+function payBill(id) {
+  const b = bills.find(x => x.id === id);
+  if (confirm('确认缴纳「' + b.type + '」¥' + b.money.toFixed(2) + ' 吗？')) {
+    b.status = '已缴费';
+    b.payTime = '2026-10-28 12:00';
+    toast('缴费成功');
+    rerender();
+  }
+}
+function toggleLike(id) {
+  const p = posts.find(x => x.id === id);
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  rerender();
+}
+function sendReply() {
+  const v = document.getElementById('replyText').value.trim();
+  if (!v) { toast('请输入回复内容'); return; }
+  posts.find(x => x.id === currentPostId).replies.push({ user: USER.name, content: v });
+  toast('回复成功');
+  rerender();
+}
+function submitPost() {
+  const t = document.getElementById('ptTitle').value.trim() || '新帖子';
+  const c = document.getElementById('ptContent').value.trim() || '（未填写内容）';
+  posts.unshift({ id: Date.now(), user: USER.name, title: t, content: c, likes: 0, liked: false, time: '2026-10-28 12:00', replies: [] });
+  toast('发布成功');
+  go('forum', true);
+}
+function toggleAct(id) {
+  const a = activities.find(x => x.id === id);
+  a.signed = !a.signed;
+  a.count += a.signed ? 1 : -1;
+  toast(a.signed ? '报名成功' : '已取消报名');
+  rerender();
+}
+function submitDeco() {
+  const d = document.getElementById('dcDate').value;
+  const c = document.getElementById('dcContent').value.trim() || '（未填写说明）';
+  decorations.unshift({ id: Date.now(), date: d, content: c, status: '待审批' });
+  toast('申请已提交，等待物业审批');
+  rerender();
+}
+function submitFeedback() {
+  const c = document.getElementById('fbContent').value.trim();
+  if (!c) { toast('请输入反馈内容'); return; }
+  feedbacks.unshift({ id: Date.now(), content: c, reply: '', status: '待回复', time: '2026-10-28 12:00' });
+  toast('反馈已提交');
+  rerender();
+}
+function saveProfile() {
+  USER.room = document.getElementById('pfRoom').value.trim() || USER.room;
+  USER.phone = document.getElementById('pfPhone').value.trim() || USER.phone;
+  toast('资料已保存');
+  go('mine', true);
+}
+
+/* ==================== 初始化 ==================== */
+document.getElementById('navTree').innerHTML = TREE.map(g => `
+  <div class="group-name">${g.group}</div>
+  ${g.items.map(it => `<div class="nav-item" data-page="${it.id}"><span class="dot"></span>${it.name}</div>`).join('')}
+`).join('');
+document.querySelectorAll('.side-left .nav-item').forEach(el => {
+  el.onclick = () => go(el.dataset.page, TAB_PAGES.includes(el.dataset.page) || el.dataset.page === 'login');
+});
+document.querySelectorAll('.tab-item').forEach(el => {
+  el.onclick = () => go(el.dataset.page, true);
+});
+
+go('login', true);
+</script>
+</body>
+</html>
